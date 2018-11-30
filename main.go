@@ -8,7 +8,15 @@ import (
 	"strconv"
 )
 
-func handleHash(w http.ResponseWriter, req *http.Request) {
+type apiHandler struct{}
+
+func (apiHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// only allow POST requests
+	if req.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	fmt.Println("TODO implement handler")
 }
 
@@ -31,7 +39,7 @@ func parsePortFromEnv() string {
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hash/", handleHash)
+	mux.Handle("/hash/", apiHandler{})
 	addr := parsePortFromEnv()
 	log.Printf("Starting server on %s", addr)
 	srv := http.Server{
