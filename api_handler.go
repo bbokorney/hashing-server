@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -14,5 +14,25 @@ func (apiHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Println("TODO implement handler")
+	if err := req.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error parsing form body: %s", err)
+		return
+	}
+
+	passwordArr := req.PostForm["password"]
+
+	if passwordArr == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if len(passwordArr) != 1 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	password := passwordArr[0]
+
+	w.Write([]byte(Hash(password)))
 }

@@ -7,14 +7,7 @@ Run the tests with
 ```
 go test
 ```
-
-Start the server with
-
-```
-go run main.go
-```
-
-Or you can build a binary and execute it.
+To run the server, build a binary and execute it.
 
 ```
 go build
@@ -24,7 +17,7 @@ go build
 By default the server listens on port `8080`. You can override this by specifying a `PORT` environment variable.
 
 ```
-PORT=4321 go run main.go
+PORT=4321 ./hashing-server
 ```
 
 ## Production considerations
