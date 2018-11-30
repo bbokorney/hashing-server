@@ -8,19 +8,8 @@ import (
 	"strconv"
 )
 
-type apiHandler struct{}
-
-func (apiHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// only allow POST requests
-	if req.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	fmt.Println("TODO implement handler")
-}
-
 func parsePortFromEnv() string {
+	// this could be made simpler with a library like envconfig (https://github.com/kelseyhightower/envconfig)
 	defaultPort := 8080
 	envPort := os.Getenv("PORT")
 	port := 0
