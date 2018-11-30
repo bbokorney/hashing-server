@@ -20,6 +20,10 @@ By default the server listens on port `8080`. You can override this by specifyin
 PORT=4321 ./hashing-server
 ```
 
+## Assumptions
+
+I implemented the requirement to only reply after 5 seconds for non-error cases only. If an invalid request is sent (wrong HTTP method, body missing `password` param, etc.), the server responds with an error immediately.
+
 ## Production considerations
 
 Before deploying this to a production environment, I would consider the following changes.
