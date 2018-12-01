@@ -6,11 +6,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 )
 
 func TestApiGet(t *testing.T) {
-	ts := httptest.NewServer(apiHandler{})
+	var wg sync.WaitGroup
+	ts := httptest.NewServer(apiHandler{
+		shutdownChan: make(chan bool, 1),
+		wg:           &wg,
+	})
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL)
@@ -24,8 +29,11 @@ func TestApiGet(t *testing.T) {
 }
 
 func TestApiPost(t *testing.T) {
-	ts := httptest.NewServer(apiHandler{})
-	defer ts.Close()
+	var wg sync.WaitGroup
+	ts := httptest.NewServer(apiHandler{
+		shutdownChan: make(chan bool, 1),
+		wg:           &wg,
+	})
 
 	res, err := http.PostForm(ts.URL, url.Values{"password": {"angryMonkey"}})
 	if err != nil {
@@ -48,7 +56,11 @@ func TestApiPost(t *testing.T) {
 }
 
 func TestApiBadRequest(t *testing.T) {
-	ts := httptest.NewServer(apiHandler{})
+	var wg sync.WaitGroup
+	ts := httptest.NewServer(apiHandler{
+		shutdownChan: make(chan bool, 1),
+		wg:           &wg,
+	})
 	defer ts.Close()
 
 	res, err := http.PostForm(ts.URL, url.Values{"foobar": {"angryMonkey"}})

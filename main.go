@@ -5,7 +5,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"sync"
 )
 
 func parsePortFromEnv() string {
@@ -27,8 +29,31 @@ func parsePortFromEnv() string {
 }
 
 func main() {
+	// handle the SIGINT OS signal and initiate
+	// a graceful shutdown
+	var wg sync.WaitGroup
+	shutdownChan := make(chan bool, 1)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	go func() {
+		<-sigChan
+		log.Println("Starting shutdown")
+		// we've received SIGINT, close
+		// the shutdownChan to indicate the
+		// server is shutting down soon
+		close(shutdownChan)
+		// wait for any existing requests to complete
+		wg.Wait()
+		// exit the process
+		os.Exit(0)
+	}()
+
 	mux := http.NewServeMux()
-	mux.Handle("/hash/", apiHandler{})
+	mux.Handle("/hash/", apiHandler{
+		shutdownChan: shutdownChan,
+		wg:           &wg,
+	})
+
 	addr := parsePortFromEnv()
 	log.Printf("Starting server on %s", addr)
 	srv := http.Server{
