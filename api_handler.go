@@ -3,36 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-	"sync"
 	"time"
 )
 
-type apiHandler struct {
-	shutdownChan chan bool
-	wg           *sync.WaitGroup
-}
-
-func shutdownInitiated(shutdownChan chan bool) bool {
-	// No value will ever be sent on this channel.
-	// If we can read from it, that's because it's been
-	// closed. If we can't read from it, it hasn't been
-	// closed, and the default case will be executed.
-	select {
-	case <-shutdownChan:
-		return true
-	default:
-		return false
-	}
-}
+type apiHandler struct{}
 
 func (a apiHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// ensure a shutdown hasn't been initiated
-	if shutdownInitiated(a.shutdownChan) {
-		w.WriteHeader(http.StatusServiceUnavailable)
-		return
-	}
-	a.wg.Add(1)
-	defer a.wg.Done()
 	// start a timer to ensure this entire request
 	// takes at least 5 seconds
 	// the timer isn't applied for requests that result in errors

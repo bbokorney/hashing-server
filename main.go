@@ -1,13 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
 	"strconv"
-	"sync"
 )
 
 func parsePortFromEnv() string {
@@ -29,30 +28,14 @@ func parsePortFromEnv() string {
 }
 
 func main() {
-	// handle the SIGINT OS signal and initiate
-	// a graceful shutdown
-	var wg sync.WaitGroup
-	shutdownChan := make(chan bool, 1)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
-	go func() {
-		<-sigChan
-		log.Println("Starting shutdown")
-		// we've received SIGINT, close
-		// the shutdownChan to indicate the
-		// server is shutting down soon
-		close(shutdownChan)
-		// wait for any existing requests to complete
-		wg.Wait()
-		// exit the process
-		os.Exit(0)
-	}()
+	// Use shutdownInitiated to indicate when
+	// to shut down the HTTP server
+	shutdownInitiated := make(chan struct{})
+	// shutdownCompleted will indicate when the server
+	// shutdown has completed so we can exit the process
+	shutdownCompleted := make(chan struct{})
 
 	mux := http.NewServeMux()
-	mux.Handle("/hash/", apiHandler{
-		shutdownChan: shutdownChan,
-		wg:           &wg,
-	})
 
 	addr := parsePortFromEnv()
 	log.Printf("Starting server on %s", addr)
@@ -60,5 +43,28 @@ func main() {
 		Addr:    addr,
 		Handler: mux,
 	}
-	log.Fatal(srv.ListenAndServe())
+
+	mux.Handle("/hash/", apiHandler{})
+	mux.HandleFunc("/shutdown/", func(w http.ResponseWriter, req *http.Request) {
+		// we've received a request to shut down, close
+		// the shutdownInitiated to indicate the
+		// server should be shut down
+		close(shutdownInitiated)
+	})
+
+	go func() {
+		<-shutdownInitiated
+		log.Println("Starting shutdown of server")
+		if err := srv.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down server: %v", err)
+		}
+		log.Println("Server shut down")
+		close(shutdownCompleted)
+	}()
+
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		log.Printf("Error starting server: %v", err)
+	}
+
+	<-shutdownCompleted
 }

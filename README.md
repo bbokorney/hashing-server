@@ -22,7 +22,8 @@ PORT=4321 ./hashing-server
 
 ## Assumptions
 
-I implemented the requirement to only reply after 5 seconds for non-error cases only. If an invalid request is sent (wrong HTTP method, body missing `password` param, etc.), the server responds with an error immediately.
+* We're using Go version 1.8 or higher. I take advantage of the ![`Server.Shutdown()`](https://golang.org/pkg/net/http/#Server.Shutdown) functionality introduced in that version to perform the graceful shutdown.
+* I implemented the requirement to only reply after 5 seconds for non-error cases only. If an invalid request is sent (wrong HTTP method, body missing `password` param, etc.), the server responds with an error immediately.
 
 ## Production considerations
 
