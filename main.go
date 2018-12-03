@@ -44,7 +44,10 @@ func main() {
 		Handler: mux,
 	}
 
-	mux.Handle("/hash/", apiHandler{})
+	var stats *statsHandler = &statsHandler{}
+
+	mux.Handle("/hash/", statsWrapper(apiHandler{}, stats))
+	mux.Handle("/stats/", stats)
 	mux.HandleFunc("/shutdown/", func(w http.ResponseWriter, req *http.Request) {
 		// we've received a request to shut down, close
 		// the shutdownInitiated to indicate the
